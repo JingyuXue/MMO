@@ -26,7 +26,7 @@ import os
 from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 
 # 生成示例数据
@@ -119,6 +119,72 @@ plt.show()
 
 ### **3.2.  Процедура отбора признаков**
 
+**Используем метод SelectKBest с mutual_info_classif, чтобы выбрать 5 наиболее информативных признаков для предсказания класса (Classes — fine/notfine). Данные содержат метеорологические показатели и индексы пожароопасности.**
+
+**(1) Подготовка данных:**
+
+```python
+# Преобразуем целевой признак в числовой формат (0 для 'notfine', 1 для 'fine')
+data['Classes'] = data['Classes'].map({'notfire': 0, 'fire': 1})
+
+# Разделяем данные на признаки (X) и целевую переменную (y)
+X = data.drop(['day', 'month', 'year', 'Classes'], axis=1)  # Исключаем даты и целевой признак
+y = data['Classes']
+```
+
+
+**(2) Отбор 5 лучших признаков：**
+
+```python
+# Инициализация SelectKBest с mutual_info_classif
+selector = SelectKBest(score_func=mutual_info_classif, k=5)
+X_selected = selector.fit_transform(X, y)
+
+# Получение имен выбранных признаков
+selected_features = X.columns[selector.get_support()]
+print("Лучшие 5 признаков:\n", selected_features.tolist())
+```
+
+**Выход：**
+
+> ![image](https://github.com/user-attachments/assets/cef98746-95e6-4f7f-8612-e6cc86a78e9b)
+
+
+**(3) Визуализация значимости признаков：**
+
+```python
+# Оценки важности всех признаков
+scores = selector.scores_
+
+plt.figure(figsize=(10, 5))
+plt.bar(X.columns, scores, color='skyblue')
+plt.xticks(rotation=45, ha='right')
+plt.title("Важность признаков (Mutual Information)")
+plt.ylabel("Score")
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+```
+
+**Выход：**
+> ![image](https://github.com/user-attachments/assets/fa1e370a-6679-40fc-90fa-11adc587dbda)
+> Рис. 6  Оценки важности всех признаков
+
+**Интерпретация:**
+Признаки FFMC, DMC, DC, ISI, FWI (индексы пожароопасности) имеют наибольшую взаимную информацию с целевой переменной Classes.
+
+
+**(4) Проверка отобранных данных：**
+
+```python
+print("Исходные признаки:\n", X.columns.tolist())
+print("\nОтобранные признаки:\n", selected_features.tolist())
+print("\nПример преобразованных данных (первые 5 строк):\n", X_selected[:5])
+```
+
+**Выход：**
+
+> ![image](https://github.com/user-attachments/assets/e6acdfe9-53fb-4767-b9ac-1995f87b886b)
+> Рис. 7  Проверка отобранных данных
 
 
 
